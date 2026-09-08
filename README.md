@@ -5,12 +5,16 @@ A conversational chat agent built with **LangGraph** and **Groq**, deployable on
 ## Project Structure
 
 ```
-├── agent.py           # LangGraph agent logic
-├── server.py          # FastAPI server (POST /chat on port 8000)
-├── app.py             # Streamlit UI (optional, for local testing)
-├── requirements.txt   # Python dependencies
-├── Dockerfile         # Container build
-└── .env.example       # Environment variable template
+├── agent.py                        # LangGraph agent logic
+├── server.py                       # FastAPI server (POST /chat on port 8000)
+├── app.py                          # Streamlit UI (optional, for local testing)
+├── evaluators/
+│   ├── response_quality.py         # Trace-level: response quality checks
+│   ├── tool_usage.py               # Agent-level: tool usage patterns
+│   └── latency_check.py            # Trace-level: response time check
+├── requirements.txt                # Python dependencies
+├── Dockerfile                      # Container build
+└── .env.example                    # Environment variable template
 ```
 
 ## Setup
@@ -73,6 +77,26 @@ streamlit run app.py
 4. Agent type: **Chat Agent** (POST /chat on port 8000)
 5. Add environment variable: `GROQ_API_KEY` (mark as secret)
 6. Deploy
+
+## Custom Evaluators
+
+Three custom evaluators are included in `evaluators/` — register them in Agent Manager under **Evaluation → Evaluators → Create Evaluator** (Code type):
+
+| Evaluator | Level | What it checks |
+|-----------|-------|----------------|
+| `response_quality` | Trace | Min length, echo detection, refusal patterns, excessive length |
+| `tool_usage` | Agent | Tool call count, loops, repetition |
+| `latency_check` | Trace | Response time vs configurable threshold (`max_latency_ms`) |
+
+### Registering an evaluator
+
+1. Go to your agent's **Evaluation** tab → **Evaluators** → **Create Evaluator**
+2. Select **Code** type and the appropriate **level** (Trace or Agent)
+3. Paste the function body from the corresponding file
+4. Add any parameters (e.g. `max_latency_ms` for `latency_check`)
+5. Create, then attach to a **Monitor** to run continuously
+
+> **Note:** `os`, `subprocess`, `socket`, `ctypes`, and `importlib` imports are disallowed in evaluator code.
 
 ## Configuration
 
