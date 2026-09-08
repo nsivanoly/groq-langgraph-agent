@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Annotated, Optional, TypedDict
+from typing import Annotated, Dict, List, Optional, TypedDict
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -57,16 +57,24 @@ def build_graph() -> StateGraph:
 
 
 # ---------------------------------------------------------------------------
-# Convenience helper
+# In-memory session store
 # ---------------------------------------------------------------------------
 
-def chat(user_message: str, history: Optional[list] = None) -> str:
-    """Send a message and return the assistant reply as a string."""
+_sessions: Dict[str, List[dict]] = {}
+
+
+def chat(message: str, session_id: str = "default") -> str:
+    """Send a message within a session and return the assistant reply."""
+    history = _sessions.get(session_id, [])
+    history.append({"role": "user", "content": message})
+
     graph = build_graph()
-    history = history or []
-    history.append({"role": "user", "content": user_message})
     result = graph.invoke({"messages": history})
-    return result["messages"][-1].content
+    reply = result["messages"][-1].content
+
+    history.append({"role": "assistant", "content": reply})
+    _sessions[session_id] = history
+    return reply
 
 
 # ---------------------------------------------------------------------------
@@ -75,14 +83,9 @@ def chat(user_message: str, history: Optional[list] = None) -> str:
 
 if __name__ == "__main__":
     print("Chat Agent (type 'quit' to exit)\n")
-    history = []
     while True:
         user_input = input("You: ")
         if user_input.strip().lower() in ("quit", "exit"):
             break
-        history.append({"role": "user", "content": user_input})
-        graph = build_graph()
-        result = graph.invoke({"messages": history})
-        assistant_msg = result["messages"][-1]
-        history = result["messages"]
-        print(f"Agent: {assistant_msg.content}\n")
+        reply = chat(user_input, session_id="cli")
+        print(f"Agent: {reply}\n")
