@@ -76,16 +76,3 @@ def chat(message: str, session_id: str = "default") -> str:
     _sessions[session_id] = history
     return reply
 
-
-# ---------------------------------------------------------------------------
-# Quick CLI test
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    print("Chat Agent (type 'quit' to exit)\n")
-    while True:
-        user_input = input("You: ")
-        if user_input.strip().lower() in ("quit", "exit"):
-            break
-        reply = chat(user_input, session_id="cli")
-        print(f"Agent: {reply}\n")
